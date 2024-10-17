@@ -1,0 +1,29 @@
+const token = 'XXXXXXXX';  // Telegram bot token
+const chatId = 'XXXXXXXX';   // Telegram chat ID
+const folderId = 'XXXXXXXX';  // Google Drive folder ID
+
+function chart2Telegram() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("chart");
+  const chart = sheet.getCharts()[0];
+  const folder = DriveApp.getFolderById(folderId);
+  const chartImageFile = folder.createFile(chart.getBlob().setName("chart.png"));
+  const imageUrl = `https://lh3.googleusercontent.com/d/${chartImageFile.getId()}`;
+  const message = `📊 *This is Example Chart*\n\nHere is the latest chart for status updates.`;
+  sendTelegramNotify(message, imageUrl);
+}
+
+
+
+function sendTelegramNotify(message, imageUrl) {
+  UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({
+      chat_id: chatId,
+      caption: message,
+      photo: imageUrl,
+      parse_mode: 'Markdown'
+    })
+  });
+}
+
