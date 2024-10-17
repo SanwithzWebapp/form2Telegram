@@ -1,0 +1,34 @@
+const token = 'XXXXXXXX';  // Telegram bot token
+const chatId = 'XXXXXXXX';   // Telegram chat ID
+
+function chart2TelegramQuick() {
+  const data = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("chart").getRange("B2:B4").getValues().flat();
+  const wait = data[0];        // รอดำเนินการ
+  const process = data[1];  // กำลังดำเนินการ
+  const done = data[2];        // เสร็จแล้ว
+
+  const imageUrl = `https://quickchart.io/chart?c={type:'bar',data:{labels:['รอดำเนินการ','กำลังดำเนินการ','เสร็จแล้ว'],datasets:[{label:'สถานะงานแจ้งซ่อม',data:[${wait},${process},${done}],backgroundColor:['Orange','Blue','Green']}]},options:{layout:{padding:30},plugins:{backgroundColor:'white'}}}`;
+  
+  sendTelegramNotify(`📊 *This is Example Chart*\n\nHere is the latest chart for status updates.`, imageUrl);
+}
+
+function sendTelegramNotify(message, imageUrl) {
+  UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({
+    chat_id: chatId,
+    caption: message,
+    photo: imageUrl,
+    parse_mode: 'Markdown'
+  }) 
+  });
+}
+
+
+
+// EXAMPLE
+// https://quickchart.io/chart?c={type:'bar',data:{labels:['รอดำเนินการ','กำลังดำเนินการ','เสร็จแล้ว'],datasets:[{label:'สถานะงานแจ้งซ่อม',data:[10,15,8],backgroundColor:['Orange','Blue','Green']}]},options:{layout:{padding:30},plugins:{backgroundColor:'white'}}}
+
+
+// DOC : https://quickchart.io/documentation
