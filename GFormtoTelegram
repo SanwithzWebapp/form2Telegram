@@ -1,0 +1,15 @@
+function onSubmit(e) {
+  sendTelegramNotify("G-Form to Telegram\n" + e.response.getItemResponses().map(item => item.getItem().getTitle() + ": " + item.getResponse()).join("\n"));
+}
+
+function sendTelegramNotify(message) {
+  const telegramToken = 'XXXX';
+  const chatId = 'XXXX';
+
+
+  UrlFetchApp.fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' })
+  });
+}
