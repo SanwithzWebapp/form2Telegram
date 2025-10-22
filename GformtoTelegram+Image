@@ -1,0 +1,48 @@
+const TELEGRAM_TOKEN = 'xxx';
+const TELEGRAM_CHAT_ID = 'xxx';
+
+
+function FormToTelegram(e) {
+  const textLines = [];
+  const imageFileIds = [];
+  const T = FormApp.ItemType;
+
+  e.response.getItemResponses().forEach(r => {
+    const it = r.getItem(), title = it.getTitle(), value = r.getResponse(), ty = it.getType();
+    if (ty === T.FILE_UPLOAD && Array.isArray(value)) value.forEach(id => { textLines.push(`- ${title}: [Image]`); imageFileIds.push(id); });
+    else textLines.push(`- ${title}: ${Array.isArray(value) ? value.join(', ') : (value || '')}`);
+  });
+
+  const caption = textLines.join('\n').slice(0, 1024);
+
+  if (imageFileIds.length === 0) {
+    UrlFetchApp.fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'post',
+      payload: { chat_id: TELEGRAM_CHAT_ID, text: caption, parse_mode: 'HTML' },
+      muteHttpExceptions: true
+    });
+    return;
+  }
+
+  const blobs = imageFileIds.map(id => { const f = DriveApp.getFileById(id); const b = f.getBlob(); b.setName(f.getName()); return b; });
+
+  for (let i = 0; i < blobs.length; i += 10) {
+    const batch = blobs.slice(i, i + 10);
+    if (batch.length === 1) {
+      UrlFetchApp.fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, {
+        method: 'post',
+        payload: { chat_id: TELEGRAM_CHAT_ID, caption: caption, photo: batch[0] },
+        muteHttpExceptions: true
+      });
+    } else {
+      const media = batch.map((b, idx) => ({ type: 'photo', media: `attach://photo${idx}`, ...(idx === 0 ? { caption } : {}) }));
+      const payload = { chat_id: TELEGRAM_CHAT_ID, media: JSON.stringify(media) };
+      batch.forEach((b, idx) => payload[`photo${idx}`] = b);
+      UrlFetchApp.fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMediaGroup`, {
+        method: 'post',
+        payload: payload,
+        muteHttpExceptions: true
+      });
+    }
+  }
+}
